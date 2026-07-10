@@ -1,3 +1,6 @@
+const path = require("path");
+const parseCSV = require("../services/csvParser");
+
 exports.uploadCSV = (req, res) => {
   if (!req.file) {
     return res.status(400).json({
@@ -6,9 +9,13 @@ exports.uploadCSV = (req, res) => {
     });
   }
 
+  const filePath = path.join(process.cwd(), "uploads", req.file.filename);
+
+  const records = parseCSV(filePath);
+
   res.status(200).json({
     success: true,
-    message: "CSV uploaded successfully",
-    file: req.file.filename,
+    totalRecords: records.length,
+    preview: records.slice(0, 10),
   });
 };
