@@ -20,14 +20,21 @@ export default function UploadCard() {
       skipEmptyLines: true,
 
       complete: (results) => {
-        console.log(results.data);
+        console.log("CSV Preview:", results.data);
         setPreviewData(results.data as any[]);
+      },
+
+      error: (error) => {
+        console.error("Papa Parse Error:", error);
       },
     });
   };
 
   const handleConfirmImport = async () => {
-    if (!file) return;
+    if (!file) {
+      alert("Please select a CSV file first.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -35,19 +42,38 @@ export default function UploadCard() {
     try {
       setLoading(true);
 
+      console.log("Uploading file to backend...");
+
       const response = await api.post("/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      console.log("Backend Response:", response.data);
+      console.log("✅ Backend Success:");
+      console.log(response.data);
 
       alert("CSV Imported Successfully!");
 
-    } catch (error) {
-      console.error(error);
-      alert("Import Failed");
+    } catch (error: any) {
+      console.error("❌ Axios Error:", error);
+
+      if (error.response) {
+        console.log("========== BACKEND RESPONSE ==========");
+        console.log(error.response.data);
+
+        alert(
+          `Backend Error:
+
+${JSON.stringify(error.response.data, null, 2)}`
+        );
+      } else if (error.request) {
+        console.log("No response from backend.");
+        alert("No response from backend.");
+      } else {
+        console.log(error.message);
+        alert(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,20 +81,13 @@ export default function UploadCard() {
 
   return (
     <div className="space-y-6">
-
       <UploadZone onFileSelect={handleFileSelect} />
 
       {file && (
         <div className="rounded-lg border bg-green-50 p-4">
-
-          <p className="font-medium">
-            Selected File:
-          </p>
-
+          <p className="font-medium">Selected File:</p>
           <p>{file.name}</p>
-
           <p>{(file.size / 1024).toFixed(2)} KB</p>
-
         </div>
       )}
 
@@ -85,7 +104,6 @@ export default function UploadCard() {
           </button>
         </div>
       )}
-
     </div>
   );
 }
